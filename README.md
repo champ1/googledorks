@@ -3,7 +3,7 @@ Accumulate's all the google dorks from exploit-db and gives options to save to m
 
 ### Save to Database
 It creates table called db_google_dorks in specified database.
-
+    ```python
     $ python main.py init mysqldb <username> <password> <database>
     Initializing..
     Initialized..
@@ -16,9 +16,11 @@ It creates table called db_google_dorks in specified database.
     Saving the data..
     Creating table db_google_dorks...
     Inserted row id:1
+    ```
 
 ### Write to csv
 It creates google_dorks.csv file in current directory.
+    ```python
     $ python main.py init csv
     Initializing..
     Initialized..
@@ -29,8 +31,10 @@ It creates google_dorks.csv file in current directory.
     Fetching the medium instance..
     Creating output of format csv
     Saving the data..
+    ```
     
 ### Dump everything on terminal
+    ```python
     $ python main.py init dump
     Initializing..
     Initialized..
@@ -45,6 +49,7 @@ It creates google_dorks.csv file in current directory.
     etching the medium instance..
     Creating output of format dump
     Dumping the data..
+    ```
     
 ### Todo
 * Update Operation
