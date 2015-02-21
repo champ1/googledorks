@@ -1,6 +1,7 @@
 import requests, re, sys
 from bs4 import BeautifulSoup
 from lib.output_factory import OutputFactory
+import threading
 
 # Dorks mail page
 google_dorks_url = 'http://www.exploit-db.com/google-dorks/'
@@ -32,7 +33,7 @@ def latest_dork(url):
     links   = beautiful_soup.select("table a")
     pattern = re.compile(ur"\w*://[a-z.-]*/\w*/(\d*)/")
 
-    data  = []
+    data    = []
 
     for link in links:
         href  = link.attrs['href']
@@ -44,31 +45,60 @@ def latest_dork(url):
     return int(max(data))
 
 # Update the dork
-def update(last_dork, url):
-    print "Updating"
+def update(latest_dork, url, args):
+    print "Updating.."
+
+    medium      = OutputFactory.create(str(args[2]))
+    last        = medium.getLastDork()
+    collection  = fetchDorks(int(last) + 1, latest_dork + 1, url)
+
+    medium.set(collection)
+    print "Saving the data.."
+    medium.save()
 
 # intialize the dork
 def initialize(latest_dork, url, args):
-    start = 1
-    end   = latest_dork + 1
     print "Initialized.."
-    collection = []
 
-    for i in range(start, end):
-        print("Fetching the dork %d from %d" % (i, end) )
-        dork_url        = url + str(i) + '/'
-        print("URL: %s" % dork_url)
-        google_dork     = requests.get(dork_url)
-        beautiful_soup  = BeautifulSoup(google_dork.content)
-        
-        collection.append(extract_data(i, beautiful_soup))
+    start       = 1
+    end         = latest_dork + 1
+    collection  = fetchDorks(start, end, url)
     
-    print args
-    print("Fetching the medium instance..")
     medium = OutputFactory.create(str(args[2]))
     medium.set(collection)
     print("Saving the data..")
     medium.save()
+
+def dorkWorker(dork_url, dork_id, collection):
+    print("Dork URL: %s" % dork_url)
+
+    google_dork     = requests.get(dork_url)
+    beautiful_soup  = BeautifulSoup(google_dork.content)
+    
+    collection.append(extract_data(dork_id, beautiful_soup))
+
+def fetchDorks(start, end, url):
+    collection  = []
+    threads     = []
+
+    try:
+        for i in range(start, end):
+            print("Fetching the dork %d from %d" % (i, end) )
+            dork_url        = url + str(i) + '/'
+            
+            t = threading.Thread(target=dorkWorker, args=(dork_url, i, collection))
+            threads.append(t)
+            t.start()
+            t.join()
+
+    except ConnectionError:
+        print("Connection Error has occured while requesting the resource.")
+
+    except RequestException as e:
+        print("Request Error occured with %s : %s ") % (e.errno, e.strerror)
+
+    finally:            
+        return collection
 
 def extract_data(dork_id, beautiful_soup):
     
@@ -87,27 +117,52 @@ def extract_data(dork_id, beautiful_soup):
     return data
 
 def help():
-        print "Make yourslef comfortable"
+        print "########################################\n#             GOOGLE DORKS             #\n#            BY AMAR MYANA             #\n########################################"
+        print "\nAccumulate's all the google dorks and gives you option to \nsave to database or write to csv or dump it.\n"
+        print "There are only two operation init and update.\n"
+        print "1. init      Downloaded all the google dorks."
+        print "2. update    Updates the google dorks from last dork to latest one."
+
+        print "\nCurrently it supports to save to mysql database or write to csv file. \nIf you want any other implemention feel free to mail me at amar92@outlook.com  \nor you can make a pull request."
+        print "\n###Save to Mysql Database###"
+        print "$ python main.py init/update mysqldb <username> <password> <database>"
+        
+        print "\n###Write to csv###"
+        print "$ python main.py init/update csv"
+
+        print "\n###Dump on the terminal###"
+        print "$ python main.py init/update dump"
+
 
 def main():
     args_length = len(sys.argv)
-    cmd_args    = str(sys.argv)
+    cmd_args    = sys.argv
 
-    if cmd_args[1] == 'help':
+    if str(cmd_args[1]) == 'help':
         help()
         sys.exit()
 
     if args_length < 3:
-        print("Minimum required arguments are three.")
+        print("Minimum 3 arguments are required.")
         help()
         sys.exit()
 
-    if cmd_args[2] == "mysqldb" and args_length != 5:
+    if str(cmd_args[2]) == "mysqldb" and args_length != 6:
         print("Minimum 5 arguments are required for mysql database process.")
         help()
         sys.exit()
-    print "Initializing.."
-    initialize(latest_dork(google_dorks_url), google_dork_url, sys.argv)
+
+    if str(cmd_args[1]) == "init":
+        print "Initializing.."
+        initialize(latest_dork(google_dorks_url), google_dork_url, sys.argv)
+
+    elif str(cmd_args[1]) == "update":
+        update(latest_dork(google_dorks_url), google_dork_url, sys.argv)
+
+    else:
+        print "Please enter the correct operation."
+        help()
+        sys.exit()
 
 if __name__ == "__main__":
     main()

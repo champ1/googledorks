@@ -48,7 +48,8 @@ class MysqlDatabase(OutputBase):
         self.db.close()
 
     def escape(self, value):
-        return str(MySQLdb.escape_string(value))
+        string = u' '.join(MySQLdb.escape_string(value)).encode('utf-8').strip()
+        return string
 
     def insert(self, row):
             now  = datetime.datetime.now()
@@ -90,4 +91,17 @@ class MysqlDatabase(OutputBase):
 
         return "Successful Inserted " + str(count) + "rows."
 
+    # Gets the id of last inserted dork
+    def getLastDork(self):
+        query = "SELECT MAX(id) FROM " + self.table
 
+        try:
+            self.cursor.execute(query)
+            data = self.cursor.fetchall()
+
+            for row in data:
+                return row[0]
+        except:
+            print("Failed to fetch the last dork entry from database.")
+            sys.exit()
+            
