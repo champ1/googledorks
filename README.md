@@ -16,6 +16,11 @@ It creates google_dorks.csv file in current directory.
 
     $ python main.py init csv
 
+### Update to csv
+Make sure google_dorks.csv exist at created location
+
+    $ pyhton main.py update csv
+
 ### Dump everything on terminal
 
     $ python main.py init dump
