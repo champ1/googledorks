@@ -46,10 +46,11 @@ class MysqlDatabase(OutputBase):
     def close(self):
         self.cursor.close()
         self.db.close()
-
+    
+    # Encode's and escapes the string
     def escape(self, value):
-        string = u' '.join(MySQLdb.escape_string(value)).encode('utf-8').strip()
-        return string
+        string = u' '.join(value).encode('utf-8', 'replace')
+        return MySQLdb.escape_string(string)
 
     def insert(self, row):
             now  = datetime.datetime.now()
