@@ -90,7 +90,7 @@ def fetchDorks(start, end, url):
             threads.append(t)
             t.start()
             t.join()
-            
+
     except ConnectionError:
         print("Connection Error has occured while requesting the resource.")
 
